@@ -1,0 +1,37 @@
+---
+- name: Build {{ image_name }} Image from Source and Deploy to Kubernetes
+  hosts: localhost
+  vars:
+    image_name: awx
+    # clone source
+    source_repo: ansible/awx
+    source_branch: devel
+    # build image
+    build_image_registry: quay.io
+    build_image_repo: ""
+    build_image_tag: ""
+    build_image_push: true    
+    build_image: "{{ build_image_registry }}/{{ build_image_repo }}/{{ image_name }}:{{ build_image_tag }}"
+    # deploy to kubernetes
+    deploy: true
+    deploy_namespace: ""
+#
+  tasks:  
+#
+  - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+    ansible.builtin.git:
+      repo: git@github.com:{{ source_repo }}.git
+      dest: artifacts/src/{{ image_name }}
+      single_branch: yes
+      version: "{{ source_branch }}"
+      force: true
+
+- name: Build {{ image_name }}
+  ansible.builtin.import_playbook: artifacts/src/awx/tools/ansible/build.yml
+  vars:
+    headless: yes
+    awx_image: awx
+    awx_image_tag: ci
+    ansible_python_interpreter: "{{ lookup('ansible.builtin.pipe', 'which python3') }}"
+
+      # - name: Push image {{ build_image }}
