@@ -12,6 +12,7 @@
     build_image_tag: ""
     build_image_push: true    
     build_image: "{{ build_image_registry }}/{{ build_image_repo }}/{{ image_name }}:{{ build_image_tag }}"
+    build_playbook: ""
     # deploy to kubernetes
     deploy: true
     deploy_namespace: ""
@@ -26,12 +27,30 @@
       version: "{{ source_branch }}"
       force: true
 
-- name: Build {{ image_name }}
-  ansible.builtin.import_playbook: artifacts/src/awx/tools/ansible/build.yml
-  vars:
-    headless: yes
-    awx_image: awx
-    awx_image_tag: ci
-    ansible_python_interpreter: "{{ lookup('ansible.builtin.pipe', 'which python3') }}"
+  - name: Build AWX
+    ansible.builtin.shell:
+      cmd: |
+        ansible-playbook -v tools/ansible/build.yml \
+          -e headless=yes \
+          -e awx_image=awx \
+          -e awx_image_tag=ci \
+          -e ansible_python_interpreter=$(which python3)
+          
+#   - name: Set playbook for next play
+#     ansible.builtin.set_fact:
+#       build_playbook: "{{ lookup('ansible.builtin.first_found', findme) }}"
+#     vars:
+#       findme:
+#         - artifacts/src/awx/tools/ansible/build.yml
+#         - error.yml  
 
-      # - name: Push image {{ build_image }}
+# # import playbook from cloned artifacts
+# - name: Build {{ image_name }}
+#   ansible.builtin.import_playbook: "{{ build_playbook }}"
+#   vars:
+#     headless: yes
+#     awx_image: awx
+#     awx_image_tag: ci
+#     ansible_python_interpreter: "{{ lookup('ansible.builtin.pipe', 'which python3') }}"
+
+# - name: Push image {{ build_image }}
