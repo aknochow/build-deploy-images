@@ -30,12 +30,12 @@
   - name: Build AWX
     ansible.builtin.shell:
       cmd: |
-        ansible-playbook -v tools/ansible/build.yml \
+        ansible-playbook -v artifacts/src/awx/tools/ansible/build.yml \
           -e headless=yes \
           -e awx_image=awx \
           -e awx_image_tag=ci \
           -e ansible_python_interpreter=$(which python3)
-          
+
 #   - name: Set playbook for next play
 #     ansible.builtin.set_fact:
 #       build_playbook: "{{ lookup('ansible.builtin.first_found', findme) }}"
