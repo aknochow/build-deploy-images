@@ -29,10 +29,10 @@
 
 - name: Build and Push AWX Image
   hosts: localhost
-  environment:
-    PYTHON: "{{ ansible_facts.python.executable }}"
   tasks:
     - name: Get version from SCM if not explicitly provided
+      environment:
+        PYTHON: "{{ ansible_facts.python.executable }}"
       make:
         chdir: awx
         target: print-VERSION
