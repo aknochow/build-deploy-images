@@ -1,12 +1,17 @@
 # build-deploy-images
 Build Images from Github Source and Deploy to a Kubernetes cluster
 
-Examples:
+Currently builds:
+- awx
 - awx-operator
 - pulp-operator
 
-Run playbook with a vars file for an image:
+#### Build
 
-_example:_
+_operator:_
 
-`ansible-playbook build-deploy.yaml -e "@vars_awx-operator.yaml"`
+`ansible-playbook build-deploy-operator.yaml -e "@vars_awx-operator.yaml"`
+
+_awx:_
+
+`ansible-playbook build-deploy-awx.yaml`
