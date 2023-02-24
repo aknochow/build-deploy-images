@@ -7,6 +7,10 @@ Examples:
 
 Run playbook with a vars file for an image:
 
-_example:_
+_build an operator:_
 
-`ansible-playbook build-deploy.yaml -e "@vars_awx-operator.yaml"`
+`ansible-playbook build-deploy-operator.yaml -e "@vars_awx-operator.yaml"`
+
+_build awx:_
+
+`ansible-playbook build-deploy-awx.yaml
