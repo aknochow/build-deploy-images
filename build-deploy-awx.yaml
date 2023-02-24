@@ -33,7 +33,7 @@
     - name: Get version from SCM if not explicitly provided
       environment:
         PYTHON: "{{ ansible_facts.python.executable }}"
-      make:
+      community.general.make:
         chdir: awx
         target: print-VERSION
       register: scm_version
@@ -41,19 +41,19 @@
       when: awx_version is not defined
 
     - name: Set awx_version
-      set_fact:
+      ansible.builtin.set_fact:
         awx_version: "{{ scm_version.stdout | split('+') | first  }}"
       when: awx_version is not defined
 
-    - include_role:
+    - ansible.builtin.include_role:
         name:  awx/tools/ansible/roles/dockerfile
       vars:
         playbook_dir: awx/tools/ansible
-    - include_role:
+    - ansible.builtin.include_role:
         name:  awx/tools/ansible/roles/image_build
       vars:
         playbook_dir: awx/tools/ansible
-    - include_role:
+    - ansible.builtin.include_role:
         name:  awx/tools/ansible/roles/image_push
       vars:
         playbook_dir: awx/tools/ansible
