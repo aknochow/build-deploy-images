@@ -29,7 +29,7 @@
 
 # import cloned playbook
 - name: Build {{ image_name }}
-  ansible.builtin.import_playbook: build.yml
+  ansible.builtin.import_playbook: build-awx.yml
   vars:
     headless: yes
     awx_image: awx
