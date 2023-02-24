@@ -22,35 +22,42 @@
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
       repo: git@github.com:{{ source_repo }}.git
-      dest: artifacts/src/{{ image_name }}
+      dest: "{{ image_name }}"
       single_branch: yes
       version: "{{ source_branch }}"
       force: true
 
-  - name: Build AWX
-    ansible.builtin.shell:
-      cmd: |
-        ansible-playbook -v artifacts/src/awx/tools/ansible/build.yml \
-          -e headless=yes \
-          -e awx_image=awx \
-          -e awx_image_tag=ci \
-          -e ansible_python_interpreter=$(which python3)
+# import cloned playbook
+- name: Build {{ image_name }}
+  ansible.builtin.import_playbook: build.yml
+  vars:
+    headless: yes
+    awx_image: awx
+    awx_image_tag: ci
+    ansible_python_interpreter: "{{ lookup('ansible.builtin.pipe', 'which python3') }}"
 
-#   - name: Set playbook for next play
-#     ansible.builtin.set_fact:
-#       build_playbook: "{{ lookup('ansible.builtin.first_found', findme) }}"
-#     vars:
-#       findme:
-#         - artifacts/src/awx/tools/ansible/build.yml
-#         - error.yml  
+- name: Build and Push AWX Image
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Get version from SCM if not explicitly provided
+      shell: |
+        make print-VERSION | cut -d + -f -1
+      args:
+        chdir: awx
+      register: scm_version
+      failed_when: not scm_version.stdout
+      when: awx_version is not defined
 
-# # import playbook from cloned artifacts
-# - name: Build {{ image_name }}
-#   ansible.builtin.import_playbook: "{{ build_playbook }}"
-#   vars:
-#     headless: yes
-#     awx_image: awx
-#     awx_image_tag: ci
-#     ansible_python_interpreter: "{{ lookup('ansible.builtin.pipe', 'which python3') }}"
+    - name: Set awx_version
+      set_fact:
+        awx_version: "{{ scm_version.stdout }}"
+      when: awx_version is not defined
 
-# - name: Push image {{ build_image }}
+    - include_role:
+        name:  awx/tools/ansible/roles/dockerfile
+    - include_role:
+        name:  awx/tools/ansible/roles/image_build
+    - include_role:
+        name:  awx/tools/ansible/roles/image_push
+      when: push | default(false) | bool
