@@ -47,8 +47,14 @@
 
     - include_role:
         name:  awx/tools/ansible/roles/dockerfile
+      vars:
+        playbook_dir: awx/tools/ansible
     - include_role:
         name:  awx/tools/ansible/roles/image_build
+      vars:
+        playbook_dir: awx/tools/ansible
     - include_role:
         name:  awx/tools/ansible/roles/image_push
+      vars:
+        playbook_dir: awx/tools/ansible
       when: push | default(false) | bool
