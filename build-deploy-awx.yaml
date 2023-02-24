@@ -27,15 +27,6 @@
       version: "{{ source_branch }}"
       force: true
 
-# import cloned playbook
-- name: Build {{ image_name }}
-  ansible.builtin.import_playbook: build-awx.yml
-  vars:
-    headless: yes
-    awx_image: awx
-    awx_image_tag: ci
-    ansible_python_interpreter: "{{ lookup('ansible.builtin.pipe', 'which python3') }}"
-
 - name: Build and Push AWX Image
   hosts: localhost
   gather_facts: true
