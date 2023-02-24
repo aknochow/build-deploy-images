@@ -29,6 +29,12 @@
 
 - name: Build and Push AWX Image
   hosts: localhost
+  vars:
+    headless: yes
+    awx_image: awx
+    awx_image_tag: ci
+    ansible_python_interpreter: "{{ ansible_facts.python.executable }}"
+
   tasks:
     - name: Get version from SCM if not explicitly provided
       environment:
