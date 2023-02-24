@@ -29,20 +29,20 @@
 
 - name: Build and Push AWX Image
   hosts: localhost
-  gather_facts: true
+  environment:
+    PYTHON: "{{ ansible_facts.python.executable }}"
   tasks:
     - name: Get version from SCM if not explicitly provided
-      shell: |
-        make print-VERSION | cut -d + -f -1
-      args:
+      make:
         chdir: awx
+        target: print-VERSION
       register: scm_version
       failed_when: not scm_version.stdout
       when: awx_version is not defined
 
     - name: Set awx_version
       set_fact:
-        awx_version: "{{ scm_version.stdout }}"
+        awx_version: "{{ scm_version.stdout | split('+') | first  }}"
       when: awx_version is not defined
 
     - include_role:
