@@ -7,60 +7,58 @@
     source_repo: ansible/awx
     source_branch: devel
     # build image
+    build_image_push: false     
     build_image_registry: quay.io
-    build_image_repo: ""
-    build_image_tag: ""
-    build_image_push: true    
-    build_image: "{{ build_image_registry }}/{{ build_image_repo }}/{{ image_name }}:{{ build_image_tag }}"
-    build_playbook: ""
+    build_image_repo: aknochow/awx
+    build_image_tag: test   
+    build_image: "{{ build_image_registry }}/c/{{ image_name }}:{{ build_image_tag }}"
     # deploy to kubernetes
-    deploy: true
-    deploy_namespace: ""
+    deploy: false
+    deploy_namespace: awx
 #
   tasks:  
 #
-  - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+  - name: Clone from https://github.com:/{{ source_repo }}:{{ source_branch }}
     ansible.builtin.git:
-      repo: git@github.com:{{ source_repo }}.git
+      repo: https://github.com/{{ source_repo }}.git
       dest: "{{ image_name }}"
       single_branch: yes
       version: "{{ source_branch }}"
       force: true
 
-- name: Build and Push AWX Image
-  hosts: localhost
-  vars:
-    headless: yes
-    awx_image: awx
-    awx_image_tag: ci
-    ansible_python_interpreter: "{{ ansible_facts.python.executable }}"
+  - name: Get version from SCM if not explicitly provided
+    environment:
+      PYTHON: "{{ ansible_facts.python.executable }}"
+    community.general.make:
+      chdir: awx
+      target: print-VERSION
+    register: scm_version
+    failed_when: not scm_version.stdout
+    when: awx_version is not defined
 
-  tasks:
-    - name: Get version from SCM if not explicitly provided
-      environment:
-        PYTHON: "{{ ansible_facts.python.executable }}"
-      community.general.make:
-        chdir: awx
-        target: print-VERSION
-      register: scm_version
-      failed_when: not scm_version.stdout
-      when: awx_version is not defined
+  - name: Set awx_version
+    ansible.builtin.set_fact:
+      awx_version: "{{ scm_version.stdout | split('+') | first  }}"
+    when: awx_version is not defined
 
-    - name: Set awx_version
-      ansible.builtin.set_fact:
-        awx_version: "{{ scm_version.stdout | split('+') | first  }}"
-      when: awx_version is not defined
+  - name: Import dockerfile role
+    ansible.builtin.include_role:
+      name:  awx/tools/ansible/roles/dockerfile
+    vars:
+      dockerfile_dest:  awx
+      
+  - name: Import image_build role
+    ansible.builtin.include_role:
+      name:  awx/tools/ansible/roles/image_build
+    vars:
+      playbook_dir: awx/tools/ansible    
+      awx_image: "{{ build_image_repo }}"
+      awx_image_tag: "{{ build_image_tag }}"  
 
-    - ansible.builtin.include_role:
-        name:  awx/tools/ansible/roles/dockerfile
-      vars:
-        playbook_dir: awx/tools/ansible
-    - ansible.builtin.include_role:
-        name:  awx/tools/ansible/roles/image_build
-      vars:
-        playbook_dir: awx/tools/ansible
-    - ansible.builtin.include_role:
-        name:  awx/tools/ansible/roles/image_push
-      vars:
-        playbook_dir: awx/tools/ansible
-      when: push | default(false) | bool
+  - name: Import image_push role
+    ansible.builtin.include_role:
+      name:  awx/tools/ansible/roles/image_push
+    vars:
+      awx_image: "{{ build_image_repo }}"
+      awx_image_tag: "{{ build_image_tag }}"          
+    when: push | default(false) | bool
