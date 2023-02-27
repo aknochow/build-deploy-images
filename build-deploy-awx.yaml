@@ -11,7 +11,7 @@
     build_image_registry: quay.io
     build_image_repo: aknochow/awx
     build_image_tag: test
-    build_image: "{{ build_image_registry }}/c/{{ image_name }}:{{ build_image_tag }}"
+    build_image: "{{ build_image_registry }}/{{ build_image_repo }}/{{ image_name }}:{{ build_image_tag }}"
     # deploy to kubernetes
     deploy: false
     deploy_namespace: awx
