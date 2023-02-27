@@ -46,7 +46,8 @@
       name:  awx/tools/ansible/roles/dockerfile
     vars:
       dockerfile_dest:  awx
-      
+      template_dest: awx/_build
+            
   - name: Import image_build role
     ansible.builtin.include_role:
       name:  awx/tools/ansible/roles/image_build
