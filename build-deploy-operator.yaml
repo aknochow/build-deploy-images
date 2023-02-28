@@ -2,43 +2,41 @@
 - name: Build Image from Source and Deploy to Kubernetes
   hosts: localhost
   vars:
-    image_name: ""
     # clone source
     source_repo: ""
     source_branch: ""
-    source_fork: ""
     # build image
+    build_image_push: true   
     build_image_registry: quay.io
     build_image_repo: ""
-    build_image_tag: ""
-    build_image_push: true    
-    build_image: "{{ build_image_registry }}/{{ build_image_repo }}/{{ image_name }}:{{ build_image_tag }}"
+    build_image_tag: "" 
+    build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
     # deploy to kubernetes
-    deploy: true
+    deploy: false
     deploy_namespace: ""
 #
   tasks:  
 #
-  - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+  - name: Clone from https://github.com:/{{ source_repo }}:{{ source_branch }}
     ansible.builtin.git:
-      repo: git@github.com:{{ source_repo }}.git
-      dest: artifacts/src/{{ image_name }}
+      repo: https://github.com/{{ source_repo }}
+      dest: src/
       single_branch: yes
       version: "{{ source_branch }}"
       force: true
 
-  - name: Build and push image {{ build_image }}
+  - name: Build and optionally push {{ build_image }}
     community.docker.docker_image:
       build:
-        path: artifacts/src/{{ image_name }}
+        path: src/
       name: "{{ build_image }}"
       tag: v1
       push: "{{ build_image_push }}"
       source: build
 
-  - name: Make deploy
+  - name: Make deploy to kubernetes cluster
     make:
-      chdir: artifacts/src/{{ image_name }}
+      chdir: artifacts/src/
       target: deploy
       params:
         NAMESPACE: "{{ deploy_namespace }}" 

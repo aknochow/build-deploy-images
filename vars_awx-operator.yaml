@@ -1,7 +1,5 @@
 ---
 # vars_awx-operator.yaml
-image_name: awx-operator
-# github source
 source_repo: ansible/awx-operator
 source_branch: devel
 # build image
@@ -11,5 +9,5 @@ build_image_tag: devel
 build_image_push: true    
 build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
 # kubernetes
-deploy: true
+deploy: false
 deploy_namespace: awx
