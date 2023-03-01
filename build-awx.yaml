@@ -34,6 +34,6 @@
     ansible.builtin.set_fact:
       build_playbook: src/{{ source_repo }}/tools/ansible/build.yml 
 
-  - name: Build and Push AWX
+  - name: Build and Push AWX to {{ build_image }}
     ansible.builtin.shell:
       cmd: ansible-playbook -v {{ build_playbook }} -e headless=yes -e awx_image={{ build_image_repo }} -e awx_image_tag={{ build_image_tag }}
