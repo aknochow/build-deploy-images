@@ -37,4 +37,4 @@
   # anticipate playbook
   - name: Build and Push AWX to {{ build_image }}
     ansible.builtin.shell:
-      cmd: ansible-playbook -i localhost -v {{ build_playbook }} -e headless=yes -e awx_image={{ build_image_registry }}/{{ build_image_repo }} -e awx_image_tag={{ build_image_tag }} -e push={{ build_image_push }}
+      cmd: ansible-playbook -v {{ build_playbook }} -e awx_image={{ build_image_registry }}/{{ build_image_repo }} -e awx_image_tag={{ build_image_tag }} -e push={{ build_image_push }}
