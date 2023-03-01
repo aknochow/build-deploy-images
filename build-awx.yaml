@@ -1,0 +1,47 @@
+---
+- name: Build {{ image_name }} Image from Source and Deploy to Kubernetes
+  hosts: localhost
+  vars:
+    # clone source
+    source_repo: ""
+    source_branch: ""
+    # build image
+    build_image_registry: ttl.sh
+    build_image_repo: ""
+    build_image_tag: ""
+    build_image_push: true    
+    build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
+    # deploy to kubernetes
+    deploy: false
+    deploy_namespace: "awx"
+#
+  tasks:  
+#
+      - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+        ansible.builtin.git:
+          repo: https://github.com/{{ source_repo }}.git
+          dest: src/{{ source_repo }}
+          single_branch: yes
+          version: "{{ source_branch }}"
+          force: true   
+
+      - name: Set build_image repo and tag if using ttl.sh for temporary image storage
+        ansible.builtin.set_fact:
+          build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
+          build_image_tag: 1h
+        when: build_image_registry == "ttl.sh"
+
+
+      # Build using imported playbook
+      - import_playbook: src/{{ source_repo }}/tools/ansible/build.yml
+        vars:
+          awx_image: "{{ build_image_repo }}"
+          awx_image_tag: "{{ build_image_tag }}" 
+
+    # Try again
+    rescue:
+      - import_playbook: src/{{ source_repo }}/tools/ansible/build.yml
+        vars:
+          awx_image: "{{ build_image_repo }}"
+          awx_image_tag: "{{ build_image_tag }}"     
+
