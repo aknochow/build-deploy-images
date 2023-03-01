@@ -1,10 +1,10 @@
 ---
-- name: Build {{ image_name }} Image from Source and Deploy to Kubernetes
+- name: Build AWX
   hosts: localhost
   vars:
     # clone source
-    source_repo: ""
-    source_branch: ""
+    source_repo: ansible/awx
+    source_branch: devel
     # build image
     build_image_registry: ttl.sh
     build_image_repo: ""
@@ -17,6 +17,10 @@
 #
   tasks:  
 #
+  tasks:
+  - name: Handle the error
+    block:
+
       - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
         ansible.builtin.git:
           repo: https://github.com/{{ source_repo }}.git
@@ -30,18 +34,14 @@
           build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
           build_image_tag: 1h
         when: build_image_registry == "ttl.sh"
-
-
-      # Build using imported playbook
-      - import_playbook: src/{{ source_repo }}/tools/ansible/build.yml
+  
+      - ansible.builtin.import_playbook: src/{{ source_repo }}/tools/ansible/build.yml
         vars:
           awx_image: "{{ build_image_repo }}"
           awx_image_tag: "{{ build_image_tag }}" 
 
-    # Try again
     rescue:
-      - import_playbook: src/{{ source_repo }}/tools/ansible/build.yml
+      - ansible.builtin.import_playbook: src/{{ source_repo }}/tools/ansible/build.yml
         vars:
           awx_image: "{{ build_image_repo }}"
-          awx_image_tag: "{{ build_image_tag }}"     
-
+          awx_image_tag: "{{ build_image_tag }}"
