@@ -29,6 +29,7 @@
     ansible.builtin.set_fact:
       build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
       build_image_tag: 1h
+      build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
     when: build_image_registry == "ttl.sh"      
 
   - name: Make docker-build {{ build_image }}
