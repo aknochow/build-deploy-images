@@ -1,15 +1,13 @@
 ---
-# vars_pulp.yaml
-image_name: pulp-operator
-# github source
+# vars_pulp-operator.yaml
 source_repo: pulp/pulp-operator
 source_branch: ansible
 # build image
-build_image_registry: quay.io
-build_image_repo: aknochow/pulp-operator
-build_image_tag: test
-build_image_push: true    
+build_image_registry: ttl.sh
+build_image_repo:  "{{ lookup('ansible.builtin.pipe', 'uuidgen') | lower }}"
+build_image_tag: 1h
+build_image_push: false    
 build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
 # kubernetes
-deploy: true
+deploy: false
 deploy_namespace: pulp

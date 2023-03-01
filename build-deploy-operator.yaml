@@ -1,15 +1,15 @@
 ---
-- name: Build Image from Source and Deploy to Kubernetes
+- name: Build Operator from Source and Deploy to Kubernetes
   hosts: localhost
   vars:
     # clone source
     source_repo: ""
     source_branch: ""
     # build image
-    build_image_push: true   
-    build_image_registry: quay.io
+    build_image_registry: ""
     build_image_repo: ""
-    build_image_tag: "" 
+    build_image_tag: ""
+    build_image_push: false    
     build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
     # deploy to kubernetes
     deploy: false
@@ -17,26 +17,25 @@
 #
   tasks:  
 #
-  - name: Clone from https://github.com:/{{ source_repo }}:{{ source_branch }}
+  - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
-      repo: https://github.com/{{ source_repo }}
-      dest: src/
+      repo: git@github.com:{{ source_repo }}.git
+      dest: src/{{ source_repo }}
       single_branch: yes
       version: "{{ source_branch }}"
       force: true
 
-  - name: Build and optionally push {{ build_image }}
+  - name: Build and optionally push image {{ build_image }}
     community.docker.docker_image:
       build:
-        path: src/
+        path: src/{{ source_repo }}
       name: "{{ build_image }}"
-      tag: v1
       push: "{{ build_image_push }}"
       source: build
 
-  - name: Make deploy to kubernetes cluster
-    make:
-      chdir: artifacts/src/
+  - name: Make deploy
+    community.general.make:
+      chdir: src/{{ source_repo }}
       target: deploy
       params:
         NAMESPACE: "{{ deploy_namespace }}" 
