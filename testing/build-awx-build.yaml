@@ -1,0 +1,24 @@
+---
+- name: Build AWX
+  hosts: localhost
+#
+  tasks:
+  - name: Handle the error
+    block:
+      - import_playbook: "src/{{ source_repo }}/tools/ansible/build.yml"
+        vars:
+          awx_image: "{{ build_image_repo }}"
+          awx_image_tag: "{{ build_image_tag }}"
+
+    rescue:
+      - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+        ansible.builtin.git:
+          repo: https://github.com/{{ source_repo }}.git
+          dest: src/{{ source_repo }}
+          single_branch: yes
+          version: "{{ source_branch }}"
+          force: true       
+
+      - import_playbook: "src/{{ source_repo }}/tools/ansible/build.yml"  
+
+
