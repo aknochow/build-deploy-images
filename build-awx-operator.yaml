@@ -10,7 +10,6 @@
     build_image_registry: "ttl.sh"
     build_image_repo: ""
     build_image_tag: ""
-    build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
     # deploy to kubernetes
     deploy: false
     deploy_namespace: awx
@@ -29,8 +28,11 @@
     ansible.builtin.set_fact:
       build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
       build_image_tag: 1h
-      build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
     when: build_image_registry == "ttl.sh"      
+
+  - name: Construct build_image
+    ansible.builtin.set_fact:
+      build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
 
   - name: Make docker-build {{ build_image }}
     community.general.make:
