@@ -19,7 +19,7 @@
 #
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
-      repo: git@github.com:{{ source_repo }}.git
+      repo: https://github.com/{{ source_repo }}.git
       dest: src/{{ source_repo }}
       single_branch: yes
       version: "{{ source_branch }}"
