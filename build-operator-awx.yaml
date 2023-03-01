@@ -21,7 +21,7 @@
 #
   - name: Show env
     debug:
-      msg: "{{ lookup('ansible.builtin.pipe', 'ENV') }}"
+      msg: "{{ lookup('ansible.builtin.pipe', 'env') }}"
 
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
