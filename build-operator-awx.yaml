@@ -14,9 +14,15 @@
     # deploy to kubernetes
     deploy: false
     deploy_namespace: awx
+  environment:
+    KUBECONFIG: "{{ K8S_AUTH_KUBECONFIG }}"
 #
   tasks:  
 #
+  - name: Show env
+    debug:
+      msg: "{{ lookup('ansible.builtin.pipe', 'ENV') }}"
+
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
       repo: https://github.com/{{ source_repo }}.git
