@@ -1,0 +1,56 @@
+---
+- name: Build Operator from Source and Deploy to Kubernetes
+  hosts: localhost
+  vars:
+    # clone source
+    source_repo: pulp/pulp-operator
+    source_branch: ansible
+    # build image
+    build_image_push: true
+    build_image_registry: "ttl.sh"
+    build_image_repo: ""
+    build_image_tag: ""
+    build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
+    # deploy to kubernetes
+    deploy: false
+    deploy_namespace: pulp
+#
+  tasks:  
+#
+  - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+    ansible.builtin.git:
+      repo: https://github.com/{{ source_repo }}.git
+      dest: src/{{ source_repo }}
+      single_branch: yes
+      version: "{{ source_branch }}"
+      force: true
+
+  - name: Set build_image repo and tag when using ttl.sh
+    ansible.builtin.set_fact:
+      build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
+      build_image_tag: 1h
+    when: build_image_registry == "ttl.sh"      
+
+  - name: Make docker-build {{ build_image }}
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      params:
+        IMG: "{{ build_image }}"      
+      target: docker-build
+
+  - name: Make docker-push {{ build_image }}
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      target: docker-push
+      params:
+        IMG: "{{ build_image }}"
+    when: build_image_push | bool
+
+  - name: Make deploy
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      target: deploy
+      params:
+        NAMESPACE: "{{ deploy_namespace }}" 
+        IMG: "{{ build_image }}"
+    when: deploy | bool

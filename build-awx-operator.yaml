@@ -1,8 +1,9 @@
 ---
-- name: Build and Push {{ source_repo }}:{{ source_branch }}
+- name: Build Operator from Source and Deploy to Kubernetes
   hosts: localhost
   vars:
-    source_repo: ansible/awx
+    # clone source
+    source_repo: ansible/awx-operator
     source_branch: devel
     # build image
     build_image_push: true
@@ -14,7 +15,7 @@
     deploy: false
     deploy_namespace: awx
 #
-  tasks:
+  tasks:  
 #
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
@@ -28,13 +29,28 @@
     ansible.builtin.set_fact:
       build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
       build_image_tag: 1h
-    when: build_image_registry == "ttl.sh"
+    when: build_image_registry == "ttl.sh"      
 
-  - name: Set AWX Facts
-    ansible.builtin.set_fact:
-      build_playbook: src/{{ source_repo }}/tools/ansible/build.yml 
+  - name: Make docker-build {{ build_image }}
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      params:
+        IMG: "{{ build_image }}"      
+      target: docker-build
 
-  # anticipate playbook
-  - name: Build and Push AWX to {{ build_image }}
-    ansible.builtin.shell:
-      cmd: ansible-playbook -v {{ build_playbook }} -e headless=yes -e awx_image={{ build_image_repo }} -e awx_image_tag={{ build_image_tag }}
+  - name: Make docker-push {{ build_image }}
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      target: docker-push
+      params:
+        IMG: "{{ build_image }}"
+    when: build_image_push | bool
+
+  - name: Make deploy
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      target: deploy
+      params:
+        NAMESPACE: "{{ deploy_namespace }}" 
+        IMG: "{{ build_image }}"
+    when: deploy | bool
