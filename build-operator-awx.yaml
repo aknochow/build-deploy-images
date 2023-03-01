@@ -14,8 +14,6 @@
     # deploy to kubernetes
     deploy: false
     deploy_namespace: awx
-  environment:
-    KUBECONFIG: "{{ K8S_AUTH_KUBECONFIG }}"
 #
   tasks:  
 #
