@@ -4,7 +4,7 @@ source_repo: pulp/pulp-operator
 source_branch: ansible
 # build image
 build_image_registry: ttl.sh
-build_image_repo:  "{{ lookup('ansible.builtin.pipe', 'uuidgen') | lower }}"
+build_image_repo:  ""
 build_image_tag: 1h
 build_image_push: false    
 build_image: "{{ build_image_registry }}/{{ build_image_repo }}:{{ build_image_tag }}"
