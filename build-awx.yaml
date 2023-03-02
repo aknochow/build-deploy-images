@@ -85,14 +85,10 @@
       dest: src/{{ source_repo }}/awx/ui/public/static/media/
     when: awx_official|default(false)|bool
 
-
-  - name: Build AWX image {{ build_image }}
-    community.docker.docker_image:
+  - name: Build AWX image {{ build_image }} with podman
+    containers.podman.podman_image:
       name: "{{ build_image }}"
+      path: "{{ dockerfile_dest }}"
+      push: "{{ build_image_push }}"
       build:
-        path: "{{ dockerfile_dest }}"
-        args:
-          VERSION: "{{ awx_version }}"
-          SETUPTOOLS_SCM_PRETEND_VERSION: "{{ awx_version }}"
-          HEADLESS: "{{ headless }}"
-      source: build
+        extra_args: "--build-arg VERSION={{ awx_version }} --build-arg SETUPTOOLS_SCM_PRETEND_VERSION={{ awx_version }} --build-arg HEADLESS={{ headless }}"
