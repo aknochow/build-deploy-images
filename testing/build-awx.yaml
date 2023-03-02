@@ -1,0 +1,7 @@
+# Import staged playbook
+- import_playbook: /stage/{{ source_repo }}/build-awx-build.yaml
+  vars:
+    registry: "{{ build_image_registry }}"
+    awx_image: "{{ build_image_repo }}"
+    awx_image_tag: "{{ build_image_tag }}"
+    push: "{{ build_image_push }}"
