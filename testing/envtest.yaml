@@ -13,16 +13,6 @@
     debug:
       msg: "{{ lookup('ansible.builtin.pipe', 'env') }}"
 
-  - name: hello-world
-    ansible.builtin.shell:
-      cmd: podman run hello-world
-
   - name: list /stage contents
     ansible.builtin.shell:
-      cmd: tree -a /stage/
-
-  - name: Run container
-    containers.podman.podman_container:
-      name: container
-      image: hello-world
-      state: started
+      cmd: tree -aL 1 /stage
