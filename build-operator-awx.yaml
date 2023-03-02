@@ -17,10 +17,6 @@
 #
   tasks:  
 #
-  - name: Show env
-    debug:
-      msg: "{{ lookup('ansible.builtin.pipe', 'env') }}"
-
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
       repo: https://github.com/{{ source_repo }}.git
