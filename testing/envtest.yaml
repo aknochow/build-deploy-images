@@ -17,8 +17,8 @@
     ansible.builtin.shell:
       cmd: tree -a /stage/
 
-  - name: Run container
-    containers.podman.podman_container:
-      name: container
-      image: hello-world
-      state: started
+  # - name: Run container
+  #   containers.podman.podman_container:
+  #     name: container
+  #     image: hello-world
+  #     state: started
