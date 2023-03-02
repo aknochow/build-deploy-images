@@ -1,5 +1,5 @@
 ---
-- name: Build and Push {{ source_repo }}:{{ source_branch }}
+- name: Build and Push AWX
   hosts: localhost
   vars:
     source_repo: ansible/awx
@@ -13,6 +13,17 @@
     # deploy to kubernetes
     deploy: false
     deploy_namespace: awx
+    # build vars
+    awx_image: "{{ build_image_repo }}"
+    awx_image_tag: "{{ build_image_tag }}"
+    build_dev: false
+    kube_dev: false
+    headless: no
+    dockerfile_dest: src/{{ source_repo }}
+    dockerfile_name: Dockerfile
+    template_dest: _build
+    receptor_image: quay.io/ansible/receptor:devel
+    image_architecture: '{{ { "x86_64": "amd64", "aarch64": "arm64", "armv7": "arm", "arm64": "arm64", "ppc64le": "ppc64le" }[ansible_facts.architecture] }}'  
 #
   tasks:
 #
@@ -30,11 +41,58 @@
       build_image_tag: 1h
     when: build_image_registry == "ttl.sh"
 
-  - name: Set AWX Facts
-    ansible.builtin.set_fact:
-      build_playbook: src/{{ source_repo }}/tools/ansible/build.yml 
+  - name: Get version from SCM if not explicitly provided
+    community.general.make:
+      chdir: src/{{ source_repo }}
+      target: print-VERSION
+    register: scm_version
+    failed_when: not scm_version.stdout
+    when: awx_version is not defined    
 
-  # anticipate playbook
-  - name: Build and Push AWX to {{ build_image }}
-    ansible.builtin.shell:
-      cmd: ansible-playbook -v {{ build_playbook }} -e registry={{ build_image_registry }} -e awx_image={{ build_image_repo }} -e awx_image_tag={{ build_image_tag }} -e push={{ build_image_push }}
+  - name: Set awx_version
+    ansible.builtin.set_fact:
+      awx_version: "{{ scm_version.stdout | split('+') | first  }}"
+    when: awx_version is not defined
+
+  - name: Create {{ template_dest }} directory
+    ansible.builtin.file:
+      path: "{{ dockerfile_dest }}/{{ template_dest }}"
+      state: directory
+
+  - name: Render supervisor configs
+    ansible.builtin.template:
+      src: src/{{ source_repo }}/tools/ansible/roles/dockerfile/templates/{{ item }}.conf.j2
+      dest: "{{ dockerfile_dest }}/{{ template_dest }}/{{ item }}.conf"
+    with_items:
+      - supervisor
+      - supervisor_task
+
+  - name: Render Dockerfile
+    ansible.builtin.template:
+      src: src/{{ source_repo }}/tools/ansible/roles/dockerfile/templates/Dockerfile.j2
+      dest: "{{ dockerfile_dest }}/{{ dockerfile_name }}"
+
+  - name: Verify awx-logos directory exists for official install
+    stat:
+      path: src/awx-logos
+    register: logosdir
+    failed_when: logosdir.stat.isdir is not defined or not logosdir.stat.isdir
+    when: awx_official|default(false)|bool
+
+  - name: Copy logos for inclusion in sdist
+    copy:
+      src: src/awx-logos/awx/ui/client/assets/
+      dest: src/{{ source_repo }}/awx/ui/public/static/media/
+    when: awx_official|default(false)|bool
+
+
+  - name: Build AWX image {{ build_image }}
+    community.docker.docker_image:
+      name: "{{ build_image }}"
+      build:
+        path: "{{ dockerfile_dest }}"
+        args:
+          VERSION: "{{ awx_version }}"
+          SETUPTOOLS_SCM_PRETEND_VERSION: "{{ awx_version }}"
+          HEADLESS: "{{ headless }}"
+      source: build
