@@ -14,6 +14,8 @@
     # deploy to kubernetes
     deploy: false
     deploy_namespace: awx
+    # ci
+    pr_sha: ""
 #
   tasks:  
 #
@@ -29,7 +31,13 @@
     ansible.builtin.set_fact:
       build_image_repo: "{{ ansible_date_time.iso8601_micro | to_uuid }}"
       build_image_tag: 1h
-    when: build_image_registry == "ttl.sh"      
+    when: build_image_registry == "ttl.sh" and pr_sha == ""
+
+  - name: Set build_image repo and tag when using ttl.sh for ci
+    ansible.builtin.set_fact:
+      build_image_repo: "{{ pr_sha }}"
+      build_image_tag: 2h
+    when: build_image_registry == "ttl.sh" and pr_sha != ""   
 
   - name: Make docker-build {{ build_image }}
     community.general.make:
