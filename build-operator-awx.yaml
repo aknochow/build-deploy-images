@@ -19,7 +19,7 @@
 #
   tasks:  
 #
-  - name: Set Podman Info
+  - name: Get Podman Info
     ansible.builtin.set_fact:
       podman_info: "{{ lookup('ansible.builtin.pipe', 'podman info -f json') }}"
 
