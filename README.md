@@ -1,5 +1,5 @@
 # build-deploy-images
-Build Images from Github Source and Deploy to a Kubernetes cluster
+Build Images from Source
 
 Currently builds:
 - awx

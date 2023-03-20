@@ -6,7 +6,7 @@
     source_repo: pulp/pulp-operator
     source_branch: main
     # build image
-    build_image_push: true
+    build_image_push: false
     build_image_registry: "ttl.sh"
     build_image_repo: ""
     build_image_tag: ""
