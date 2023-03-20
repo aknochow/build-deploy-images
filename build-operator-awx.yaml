@@ -19,6 +19,10 @@
 #
   tasks:  
 #
+  - name: Show Podman info
+    ansible.builtin.debug:
+      var: "{{ lookup('ansible.builtin.pipe', 'podman info') }}"
+
   - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
     ansible.builtin.git:
       repo: https://github.com/{{ source_repo }}.git
