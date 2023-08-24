@@ -14,3 +14,5 @@
     containers.podman.podman_image:
       name: test
       path: "{{ playbook_dir }}"
+      build:
+        extra_args: "--isolation=chroot"
