@@ -13,4 +13,4 @@
   - name: Build test image with podman
     containers.podman.podman_image:
       name: test
-      path: Containerfile
+      path: "{{ playbook_dir }}"
