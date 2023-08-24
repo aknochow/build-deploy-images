@@ -8,4 +8,4 @@
   - name: Get Podman Info
     ansible.builtin.set_fact:
       podman_info: "{{ lookup('ansible.builtin.pipe', 'podman info -f json') }}"
-    ignore_errors: true
+#    ignore_errors: true
