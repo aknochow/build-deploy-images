@@ -110,6 +110,7 @@
   - name: Echo manual command to build
     ansible.builtin.debug:
       msg: |
-        Manually build {{ build_image }} with the following command:
+        Manually build and push {{ build_image }} with the following commands:
         podman build -t {{ build_image }} -f src/{{ clone_repo }}/{{ clone_branch }}/Dockerfile --build-arg VERSION={{ awx_version }} --build-arg SETUPTOOLS_SCM_PRETEND_VERSION={{ awx_version }} --build-arg HEADLESS={{ headless }}
+        podman push {{ build_image }}
     when: not build_image_build
