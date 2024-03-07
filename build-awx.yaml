@@ -2,9 +2,10 @@
 - name: Build and Push AWX
   hosts: localhost
   vars:
-    # clone source  
-    source_repo: ansible/awx
-    source_branch: devel
+    # clone source
+    clone_git: github.com
+    clone_repo: ansible/awx
+    clone_branch: devel
     # build image
     build_image_push: false
     build_image_registry: "ttl.sh"
@@ -20,7 +21,7 @@
     build_dev: false
     kube_dev: false
     headless: no
-    dockerfile_dest: src/{{ source_repo }}
+    dockerfile_dest: src/{{ clone_repo }}
     dockerfile_name: Dockerfile
     template_dest: _build
     receptor_image: quay.io/ansible/receptor:devel
@@ -32,12 +33,13 @@
     ansible.builtin.set_fact:
       podman_info: "{{ lookup('ansible.builtin.pipe', 'podman info -f json') }}"
 
-  - name: Clone {{ source_repo }}:{{ source_branch }} from github.com
+  - name: Clone {{ clone_repo }}:{{ clone_branch }} from {{ clone_git }}
     ansible.builtin.git:
-      repo: https://github.com/{{ source_repo }}.git
-      dest: src/{{ source_repo }}
+      repo: https://{{ clone_git }}/{{ clone_repo | lower }}.git
+      dest: "{{ clone_dest | default('src/' + clone_repo + '/' + clone_branch) }}"   
+      accept_hostkey: true
       single_branch: yes
-      version: "{{ source_branch }}"
+      version: "{{ clone_branch }}"
       force: true
 
   - name: Set build_image repo and tag when using ttl.sh
@@ -48,7 +50,7 @@
 
   - name: Get version from SCM if not explicitly provided
     community.general.make:
-      chdir: src/{{ source_repo }}
+      chdir: src/{{ clone_repo }}/{{ clone_branch }}
       target: print-VERSION
     register: scm_version
     failed_when: not scm_version.stdout
@@ -59,41 +61,46 @@
       awx_version: "{{ scm_version.stdout | split('+') | first  }}"
     when: awx_version is not defined
 
-  - name: Create {{ template_dest }} directory
+  - name: Create _build directory
     ansible.builtin.file:
-      path: "{{ dockerfile_dest }}/{{ template_dest }}"
+      path: src/{{ clone_repo }}/{{ clone_branch }}/_build
       state: directory
 
   - name: Render supervisor configs
     ansible.builtin.template:
-      src: src/{{ source_repo }}/tools/ansible/roles/dockerfile/templates/{{ item }}.conf.j2
-      dest: "{{ dockerfile_dest }}/{{ template_dest }}/{{ item }}.conf"
+      src: src/{{ clone_repo }}/{{ clone_branch }}/tools/ansible/roles/dockerfile/templates/{{ item }}.conf.j2
+      dest: src/{{ clone_repo }}/{{ clone_branch }}/_build/{{ item }}.conf
     with_items:
-      - supervisor
+      - supervisor_web
       - supervisor_task
+      - supervisor_rsyslog
 
   - name: Render Dockerfile
     ansible.builtin.template:
-      src: src/{{ source_repo }}/tools/ansible/roles/dockerfile/templates/Dockerfile.j2
-      dest: "{{ dockerfile_dest }}/{{ dockerfile_name }}"
+      src: src/{{ clone_repo }}/{{ clone_branch }}/tools/ansible/roles/dockerfile/templates/Dockerfile.j2
+      dest: src/{{ clone_repo }}/{{ clone_branch }}/Dockerfile
 
   - name: Verify awx-logos directory exists for official install
-    stat:
-      path: src/awx-logos
+    ansible.builtin.stat:
+      path: src/{{ clone_repo }}/{{ clone_branch }}/awx-logos
     register: logosdir
     failed_when: logosdir.stat.isdir is not defined or not logosdir.stat.isdir
     when: awx_official|default(false)|bool
 
   - name: Copy logos for inclusion in sdist
-    copy:
-      src: src/awx-logos/awx/ui/client/assets/
-      dest: src/{{ source_repo }}/awx/ui/public/static/media/
+    ansible.builtin.copy:
+      src: src/{{ clone_repo }}/{{ clone_branch }}/awx-logos/awx/ui/client/assets/
+      dest: src/{{ clone_repo }}/{{ clone_branch }}/awx/ui/public/static/media/
     when: awx_official|default(false)|bool
 
   - name: Build AWX image {{ build_image }} with podman
     containers.podman.podman_image:
       name: "{{ build_image }}"
-      path: "{{ dockerfile_dest }}"
+      path: src/{{ clone_repo }}/{{ clone_branch }}
       push: "{{ build_image_push }}"
       build:
         extra_args: "--build-arg VERSION={{ awx_version }} --build-arg SETUPTOOLS_SCM_PRETEND_VERSION={{ awx_version }} --build-arg HEADLESS={{ headless }}"
+    register: podman_build
+    until: podman_build is not failed
+    retries: 1
+    delay: 10
