@@ -7,6 +7,7 @@
     clone_repo: ansible/awx
     clone_branch: devel
     # build image
+    build_image_build: true
     build_image_push: false
     build_image_registry: "ttl.sh"
     build_image_repo: ""
@@ -104,3 +105,11 @@
     until: podman_build is not failed
     retries: 1
     delay: 10
+    when: build_image_build
+
+  - name: Echo manual command to build
+    ansible.builtin.debug:
+      msg: |
+        Manually build {{ build_image }} with the following command:
+        podman build -t {{ build_image }} -f src/{{ clone_repo }}/{{ clone_branch }}/Dockerfile --build-arg VERSION={{ awx_version }} --build-arg SETUPTOOLS_SCM_PRETEND_VERSION={{ awx_version }} --build-arg HEADLESS={{ headless }}
+    when: not build_image_build
